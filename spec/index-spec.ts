@@ -83,7 +83,7 @@ describe('equal', () => {
 describe('array', () => {
   const decoder = module.array(module.number())
 
-  it('works when given an array',() => {
+  it('works when given an array', () => {
     expect(decoder.decodeJSON('[1, 2, 3]')).toEqual([1, 2, 3])
   })
 
@@ -118,9 +118,9 @@ describe('object', () => {
     it('can decode a simple object', () => {
       const decoder = module.object(
         ['x', module.number()],
-        (x) => ({x})
+        (x) => ({ x })
       )
-      expect(decoder.decodeJSON('{"x": 5}')).toEqual({x: 5})
+      expect(decoder.decodeJSON('{"x": 5}')).toEqual({ x: 5 })
     })
 
     it('can decode a nested object', () => {
@@ -128,14 +128,14 @@ describe('object', () => {
         ['payload', module.object(
           ['x', module.number()],
           ['y', module.number()],
-          (x, y) => ({x, y})
+          (x, y) => ({ x, y })
         )],
         ['error', module.equal(false)],
-        (payload, error) => ({payload, error})
+        (payload, error) => ({ payload, error })
       )
       const json = '{"payload": {"x": 5, "y": 2}, "error": false}'
       expect(decoder.decodeJSON(json)).toEqual({
-        payload: {x: 5, y: 2},
+        payload: { x: 5, y: 2 },
         error: false
       })
     })
@@ -152,14 +152,40 @@ describe('object', () => {
     it('can decode an object with optional keys', () => {
       interface User {
         name?: string
+        age?: number
+        city?: string
       }
 
       const decoder: module.Decoder<User> = module.object(
-        ['name', module.oneOf(module.string(), module.succeed(undefined))],
-        (name) => ({name})
+        ['name', module.optional(module.string())],
+        ["age", module.optional(module.number())],
+        ["city", module.optional(module.string())],
+        (name, age, city) => ({ name, age, city })
       )
 
-      expect(decoder.decodeJSON(`{}`)).toEqual({name: undefined})
+      expect(
+        decoder.decodeJSON(`{}`)
+      ).toEqual(
+        { name: undefined, age: undefined, city: undefined }
+      )
+
+      expect(
+        decoder.decodeJSON(`{"age": 42}`)
+      ).toEqual(
+        { name: undefined, age: 42, city: undefined }
+      )
+
+      expect(
+        decoder.decodeJSON(`{"name": "Jack", "age": 42}`)
+      ).toEqual(
+        { name: "Jack", age: 42, city: undefined }
+      )
+
+      expect(
+        decoder.decodeJSON(`{"age": 42, "city": "New York"}`)
+      ).toEqual(
+        { name: undefined, age: 42, city: "New York" }
+      )
     })
   })
 
@@ -167,7 +193,7 @@ describe('object', () => {
     it('fails when not given an object', () => {
       const decoder = module.object(
         ['x', module.number()],
-        (x: number) => ({x})
+        (x: number) => ({ x })
       )
       expect(() => decoder.decodeJSON('true')).toThrowError(
         `error at root: expected object, got boolean`
@@ -177,7 +203,7 @@ describe('object', () => {
     it('reports a missing key', () => {
       const decoder = module.object(
         ['x', module.number()],
-        (x: number) => ({x})
+        (x: number) => ({ x })
       )
       expect(() => decoder.decodeJSON('{}')).toThrowError(
         `error at root: expected object with keys: x`
@@ -189,7 +215,7 @@ describe('object', () => {
         ['x', module.number()],
         ['y', module.number()],
         ['?', module.string()],
-        (x: number, y: number, huh: string) => ({x, y, huh})
+        (x: number, y: number, huh: string) => ({ x, y, huh })
       )
       expect(() => decoder.decodeJSON('{"x": 5}')).toThrowError(
         `error at root: expected object with keys: "?", y`
@@ -199,7 +225,7 @@ describe('object', () => {
     it('reports invalid values', () => {
       const decoder = module.object(
         ['name', module.string()],
-        (name: string) => {name}
+        (name: string) => { name }
       )
       expect(() => decoder.decodeJSON('{"name": 5}')).toThrowError(
         `error at .name: expected string, got number`
@@ -436,13 +462,13 @@ describe('andThen', () => {
       case 'train':
         return module.map(
           (color) => `${color} line`,
-            module.at(['color'], module.string())
-      )
+          module.at(['color'], module.string())
+        )
       case 'plane':
         return module.map(
           (airline) => `${airline} airlines`,
-            module.at(['airline'], module.string())
-      )
+          module.at(['airline'], module.string())
+        )
     }
     return module.succeed("you're walkin', pal")
   }
@@ -543,7 +569,7 @@ describe('lazy', () => {
       ['replies', module.array(
         module.lazy(() => decoder)
       )],
-      (msg, replies) => ({msg, replies})
+      (msg, replies) => ({ msg, replies })
     )
 
     it('can decode the data structure', () => {
@@ -551,7 +577,7 @@ describe('lazy', () => {
       expect(decoder.decodeJSON(tree)).toEqual({
         msg: 'hey',
         replies: [
-          {msg: 'hi', replies: []}
+          { msg: 'hi', replies: [] }
         ]
       })
     })
@@ -574,7 +600,7 @@ describe('dict', () => {
     })
 
     it('can decode an object of with arbitrary keys', () => {
-      expect(decoder.decodeJSON('{"a":1,"b":2}')).toEqual({a: 1, b: 2})
+      expect(decoder.decodeJSON('{"a":1,"b":2}')).toEqual({ a: 1, b: 2 })
     })
 
     it('throws an error if a value cannot be decoded', () => {
@@ -603,7 +629,7 @@ describe('dict', () => {
 
     it('transforms the values', () => {
       expect(decoder.decodeJSON(`{"hey":"there","yo":"dude"}`)).toEqual(
-        {hey: 'there!', yo: 'dude!'}
+        { hey: 'there!', yo: 'dude!' }
       )
     })
   })
@@ -613,14 +639,14 @@ describe('Decoder.decodeAny', () => {
   const decoder = module.object(
     ['id', module.number()],
     ['name', module.string()],
-    (id, name) => ({id, name})
+    (id, name) => ({ id, name })
   )
 
   it('can decode an normal object', () => {
     const decoder = module.object(
       ['id', module.number()],
       ['name', module.string()],
-      (id, name) => ({id, name})
+      (id, name) => ({ id, name })
     )
     const input = {
       id: 7,
