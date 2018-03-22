@@ -387,7 +387,7 @@ export function at <T>(keyPath: Array<string|number>, decoder: Decoder<T>): Deco
  * The `first`/`rest` split is to make sure at least one decoder is specified.
  * @param first First decoder to try.
  * @param rest Fallback decoders to try in order if the first fails.
- * @returns A decoder or throws an Error of no decoders succeeded.
+ * @returns A decoder or throws an Error if no decoders succeeded.
  */
 export function oneOf <T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> {
   return createDecoder((obj, at) => {
