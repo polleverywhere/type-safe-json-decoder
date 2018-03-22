@@ -3,6 +3,9 @@
  * decoders in this module are pure and reusable.
  */
 
+// tslint:disable:max-line-length
+// tslint:disable:no-shadowed-variable
+
 /**
  */
 interface ErrorInfo {
@@ -12,16 +15,15 @@ interface ErrorInfo {
 }
 
 function decoderError({ at, expected, got }: ErrorInfo): Error {
-  if (typeof got === 'undefined') {
+  if (typeof got === "undefined") {
     return new Error(`error at ${at}: expected ${expected}`)
   }
 
   return new Error(`error at ${at}: expected ${expected}, got ${prettyPrint(got)}`)
 }
 
-interface DecoderFunc<T> {
-  (object: any, at: string): T
-}
+type DecoderFunc<T>
+  = (object: any, at: string) => T
 
 let decode: <T>(decoder: Decoder<T>, object: any, at: string) => T
 let createDecoder: <T>(fn: DecoderFunc<T>) => Decoder<T>
@@ -42,8 +44,8 @@ export class Decoder<T> {
     // compiler will complain about unused var without this
     Decoder._ignore
 
-    decode = <T>(decoder: Decoder<T>, object: any, at: string): T => {
-      return decoder.fn(object, at)
+    decode = <T>(decoder: Decoder<T>, obj: any, key: string): T => {
+      return decoder.fn(obj, key)
     }
 
     createDecoder = <T>(fn: DecoderFunc<T>) => {
@@ -69,8 +71,8 @@ export class Decoder<T> {
    * @param object Any object.
    * @returns A value of the type described by the Decoder.
    */
-  decodeAny(object: any): T {
-    return this.fn(object, 'root')
+  decodeAny(obj: any): T {
+    return this.fn(obj, "root")
   }
 }
 
@@ -82,11 +84,11 @@ export type EntryDecoder<T> = [string, Decoder<T>]
 
 function prettyPrint(value: any): string {
   if (value === null) {
-    return 'null'
+    return "null"
   }
 
   if (value instanceof Array) {
-    return 'array'
+    return "array"
   }
 
   return typeof value
@@ -101,11 +103,11 @@ function escapeKey(key: string): string {
 }
 
 function pushLocation(at: string, key: string | number): string {
-  if (at === 'root') {
-    at = ''
+  if (at === "root") {
+    at = ""
   }
 
-  if (typeof key === 'number') {
+  if (typeof key === "number") {
     return `${at}[${key}]`
   }
 
@@ -120,11 +122,11 @@ function pushLocation(at: string, key: string | number): string {
  * @returns A Decoder that decodes a string.
  */
 export function string(): Decoder<string> {
-  return createDecoder((obj, at) => {
-    if (typeof obj !== 'string') {
+  return createDecoder((obj, key) => {
+    if (typeof obj !== "string") {
       throw decoderError({
-        at,
-        expected: 'string',
+        at: key,
+        expected: "string",
         got: obj
       })
     }
@@ -137,11 +139,11 @@ export function string(): Decoder<string> {
  * @returns A Decoder that decodes a number.
  */
 export function number(): Decoder<number> {
-  return createDecoder((obj, at) => {
-    if (typeof obj !== 'number') {
+  return createDecoder((obj, key) => {
+    if (typeof obj !== "number") {
       throw decoderError({
-        at,
-        expected: 'number',
+        at: key,
+        expected: "number",
         got: obj
       })
     }
@@ -154,11 +156,11 @@ export function number(): Decoder<number> {
  * @returns A Decoder that decodes a boolean.
  */
 export function boolean(): Decoder<boolean> {
-  return createDecoder((obj, at) => {
-    if (typeof obj !== 'boolean') {
+  return createDecoder((obj, key) => {
+    if (typeof obj !== "boolean") {
       throw decoderError({
-        at,
-        expected: 'boolean',
+        at: key,
+        expected: "boolean",
         got: obj
       })
     }
@@ -181,10 +183,10 @@ export function boolean(): Decoder<boolean> {
  * @returns A Decoder that decodes a value that equals the given value.
  */
 export function equal<T>(value: T): Decoder<T> {
-  return createDecoder((obj, at) => {
+  return createDecoder((obj, key) => {
     if (obj !== value) {
       throw decoderError({
-        at,
+        at: key,
         expected: JSON.stringify(value),
         got: obj
       })
@@ -203,16 +205,16 @@ export function equal<T>(value: T): Decoder<T> {
  * @returns A Decoder that will decode an array of elements of the given type.
  */
 export function array<T>(element: Decoder<T>): Decoder<T[]> {
-  return createDecoder((obj, at) => {
+  return createDecoder((obj, key) => {
     if (!(obj instanceof Array)) {
       throw decoderError({
-        at,
-        expected: 'array',
+        at: key,
+        expected: "array",
         got: obj
       })
     }
 
-    return obj.map((e, i) => decode(element, e, pushLocation(at, i)))
+    return obj.map((e, i) => decode(element, e, pushLocation(key, i)))
   })
 }
 
@@ -238,16 +240,16 @@ export function object<T, A, B, C, D, E, F, G, H, I, J, K, L, M>(ad: EntryDecode
 export function object<T, A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: EntryDecoder<A>, bd: EntryDecoder<B>, cd: EntryDecoder<C>, dd: EntryDecoder<D>, ed: EntryDecoder<E>, fd: EntryDecoder<F>, gd: EntryDecoder<G>, hd: EntryDecoder<H>, id: EntryDecoder<I>, jd: EntryDecoder<J>, kd: EntryDecoder<K>, ld: EntryDecoder<L>, md: EntryDecoder<M>, nd: EntryDecoder<N>, cons: (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K, l: L, m: M, n: N) => T): Decoder<T>
 export function object<T>(...args: any[]): Decoder<T> {
   const cons: (...args: any[]) => T = args[args.length - 1]
-  const decoders: EntryDecoder<any>[] = args.slice(0, args.length - 1)
+  const decoders: Array<EntryDecoder<any>> = args.slice(0, args.length - 1)
 
   return createDecoder((obj, at) => {
     const missingKeys: string[] = []
     const values: any[] = []
 
-    if (typeof obj !== 'object') {
+    if (typeof obj !== "object") {
       throw decoderError({
         at,
-        expected: 'object',
+        expected: "object",
         got: obj
       })
     }
@@ -272,11 +274,11 @@ export function object<T>(...args: any[]): Decoder<T> {
       const keys = missingKeys
         .sort()
         .map(escapeKey)
-        .join(', ')
+        .join(", ")
 
       throw decoderError({
         at,
-        expected: `object with keys: ${keys}`,
+        expected: `object with keys: ${keys}`
       })
     }
 
@@ -300,8 +302,8 @@ export function object<T>(...args: any[]): Decoder<T> {
  * @returns A decoder that will apply the function after decoding the input.
  */
 export function map<T1, T2>(transform: (v: T1) => T2, decoder: Decoder<T1>): Decoder<T2> {
-  return createDecoder((obj, at) => {
-    return transform(decode(decoder, obj, at))
+  return createDecoder((obj, key) => {
+    return transform(decode(decoder, obj, key))
   })
 }
 
@@ -325,10 +327,10 @@ export function tuple<A, B, C, D, E, F, G, H, I, J, K>(ad: Decoder<A>, bd: Decod
 export function tuple<A, B, C, D, E, F, G, H, I, J, K, L>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>): Decoder<[A, B, C, D, E, F, G, H, I, J, K, L]>
 export function tuple<A, B, C, D, E, F, G, H, I, J, K, L, M>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>): Decoder<[A, B, C, D, E, F, G, H, I, J, K, L, M]>
 export function tuple<A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>, nd: Decoder<N>): Decoder<[A, B, C, D, E, F, G, H, I, J, K, L, M, N]>
-export function tuple(...decoders: Decoder<any>[]): Decoder<any> {
-  return createDecoder((obj, at) => (
+export function tuple(...decoders: Array<Decoder<any>>): Decoder<any> {
+  return createDecoder((obj, key) => (
     decoders.map((decoder, i) => {
-      return decode(decoder, obj[i], pushLocation(at, i))
+      return decode(decoder, obj[i], pushLocation(key, i))
     })
   ))
 }
@@ -347,7 +349,7 @@ export function at<T>(keyPath: Array<string | number>, decoder: Decoder<T>): Dec
     const { result, resultAt } = keyPath.reduce(({ result, resultAt }, key) => {
       const value = result[key]
       if (value === undefined) {
-        if (typeof key === 'number') {
+        if (typeof key === "number") {
           if (result instanceof Array) {
             throw decoderError({
               at,
@@ -387,7 +389,7 @@ export function at<T>(keyPath: Array<string | number>, decoder: Decoder<T>): Dec
  * @param rest Fallback decoders to try in order if the first fails.
  * @returns A decoder or throws an Error if no decoders succeeded.
  */
-export function oneOf<T>(first: Decoder<T>, ...rest: Decoder<T>[]): Decoder<T> {
+export function oneOf<T>(first: Decoder<T>, ...rest: Array<Decoder<T>>): Decoder<T> {
   return createDecoder((obj, at) => {
     try {
       return decode(first, obj, at)
@@ -433,7 +435,7 @@ export function succeed<T>(value: T): Decoder<T> {
  * @param ad First decoder to run against the value.
  * @param cb Callback that receives the previous result and returns a decoder.
  * @returns The decoder returned by from the callback function.
-*/
+ */
 
 export function andThen<A, B>(ad: Decoder<A>, cb: (a: A) => Decoder<B>): Decoder<B> {
   return createDecoder((obj, at) => {
@@ -464,7 +466,7 @@ export function union<A, B, C, D, E, F, G, H, I, J, K>(ad: Decoder<A>, bd: Decod
 export function union<A, B, C, D, E, F, G, H, I, J, K, L>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L>
 export function union<A, B, C, D, E, F, G, H, I, J, K, L, M>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L | M>
 export function union<A, B, C, D, E, F, G, H, I, J, K, L, M, N>(ad: Decoder<A>, bd: Decoder<B>, cd: Decoder<C>, dd: Decoder<D>, ed: Decoder<E>, fd: Decoder<F>, gd: Decoder<G>, hd: Decoder<H>, id: Decoder<I>, jd: Decoder<J>, kd: Decoder<K>, ld: Decoder<L>, md: Decoder<M>, nd: Decoder<N>): Decoder<A | B | C | D | E | F | G | H | I | J | K | L | M | N>
-export function union(...decoders: Decoder<any>[]): Decoder<any> {
+export function union(...decoders: Array<Decoder<any>>): Decoder<any> {
   return createDecoder((obj, at) => {
     for (const decoder of decoders) {
       try {
@@ -489,8 +491,8 @@ export function union(...decoders: Decoder<any>[]): Decoder<any> {
  *   ['replies', array(decoder)],
  *   (msg, replies) => ({msg, replies})
  * )
-// Block-scoped variable 'decoder' used before its declaration.
-// Variable 'decoder' is used before being assigned.
+ * // Block-scoped variable 'decoder' used before its declaration.
+ * // Variable 'decoder' is used before being assigned.
  * ```
  * However, a variable can be used within its definition if it is not
  * immediately evaluated, or in other words, wrapped in an anonymous function:
@@ -512,7 +514,9 @@ export function lazy<T>(thunk: () => Decoder<T>): Decoder<T> {
 
 /** Object with arbitrary keys and a single value type. Used by [dict](#dict).
  */
-export type Dict<T> = { [index: string]: T }
+export interface Dict<T> {
+  [index: string]: T
+}
 
 /**
  * Decode an object with arbitrary keys. Values must be of the same type.
@@ -524,7 +528,7 @@ export function dict<T>(value: Decoder<T>): Decoder<Dict<T>> {
     if (!(obj instanceof Object) || (obj instanceof Array)) {
       throw decoderError({
         at,
-        expected: 'object',
+        expected: "object",
         got: obj
       })
     }
